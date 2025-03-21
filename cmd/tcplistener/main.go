@@ -9,10 +9,9 @@ import (
 	"strings"
 )
 
-const netPort = ":42069"
+const netPort = ":8000"
 
 func main() {
-
 	listener, err := net.Listen("tcp", netPort)
 	if err != nil {
 		log.Fatalf("error listening for TCP traffic: %s\n", err.Error())

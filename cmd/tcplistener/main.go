@@ -1,12 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
-	"strings"
+
+	"github.com/abhinaenae/http-from-scratch/internal/request"
 )
 
 const netPort = ":8000"
@@ -26,47 +25,15 @@ func main() {
 		}
 		fmt.Printf("Connection established with %s\n", conn.RemoteAddr())
 		fmt.Println("=====================================")
-		linesChan := getLinesChannel(conn)
-		for line := range linesChan {
-			fmt.Println(line)
+		req, err := request.RequestFromReader(conn)
+		if err != nil {
+			log.Fatalf("error parsing request: %s\n", err.Error())
 		}
+		fmt.Println("Request line:")
+		fmt.Printf("- Method: %s\n", req.RequestLine.Method)
+		fmt.Printf("- Target: %s\n", req.RequestLine.RequestTarget)
+		fmt.Printf("- Version: %s\n", req.RequestLine.HttpVersion)
 		fmt.Printf("Connection to %s closed\n", conn.RemoteAddr())
 	}
 
-}
-
-func getLinesChannel(f io.ReadCloser) <-chan string {
-
-	ch := make(chan string)
-	go func() {
-		defer f.Close()
-		defer close(ch)
-		currentLineContents := ""
-		for {
-			buffer := make([]byte, 8)
-			n, err := f.Read(buffer)
-			if err != nil {
-				if currentLineContents != "" {
-					ch <- currentLineContents // Send last line if file doesn't end with newline
-				}
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				fmt.Printf("error: %s\n", err.Error())
-				break
-			}
-			str := string(buffer[:n])
-			parts := strings.Split(str, "\n")
-			for i := range len(parts) - 1 {
-				line := currentLineContents + parts[i]
-				ch <- line
-				currentLineContents = ""
-			}
-			currentLineContents += parts[len(parts)-1]
-		}
-
-		close(ch)
-	}()
-
-	return ch
 }

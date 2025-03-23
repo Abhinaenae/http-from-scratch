@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"sync/atomic"
+
+	"github.com/abhinaenae/http-from-scratch/internal/response"
 )
 
 type Server struct {
@@ -63,10 +65,9 @@ Hello World!
 */
 func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
-	response := "HTTP/1.1 200 OK\r\n" + // Status line
-		"Content-Type: text/plain\r\n" + // Example Header
-		"\r\n" + // Blank line to seperate headers from body
-		"Hello World!\n" // Body
-	conn.Write([]byte(response))
-	return
+	response.WriteStatusLine(conn, response.StatusCodeSuccess)
+	headers := response.GetDefaultHeaders(0)
+	if err := response.WriteHeaders(conn, headers); err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
 }
